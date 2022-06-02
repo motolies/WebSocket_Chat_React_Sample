@@ -1,6 +1,7 @@
 import * as StompJs from "@stomp/stompjs"
-import * as SockJS from "sockjs-client"
 import {useEffect, useRef, useState} from "react"
+import {Box, TextField} from "@mui/material"
+import ChatRectangle from "../component/ChatRectangle"
 
 const data = {
     roomId: '11ECBEF60500E127AA7E02915ECBC9E4',
@@ -9,6 +10,7 @@ const data = {
 }
 
 function Index() {
+    const messagesEnd = useRef(null)
 
     const client = useRef({})
     const [chatMessages, setChatMessages] = useState([])
@@ -16,13 +18,14 @@ function Index() {
 
     useEffect(() => {
         connect()
-        return () => disconnect()
+        return () => {
+            disconnect()
+        }
     }, [])
 
     const connect = () => {
         client.current = new StompJs.Client({
-            brokerURL: "ws://localhost:8080/ws-stomp/websocket", // 웹소켓 서버로 직접 접속
-            // webSocketFactory: () => new SockJS("/ws-stomp"), // proxy를 통한 접속
+            brokerURL: "ws://localhost:8080/ws-stomp/websocket",
             connectHeaders: {
                 "token": data.token,
             },
@@ -51,6 +54,7 @@ function Index() {
         client.current.subscribe(`/sub/chat/room/${data.roomId}`, ({body}) => {
             console.log('recieve message', body)
             setChatMessages((_chatMessages) => [..._chatMessages, JSON.parse(body)])
+
         })
     }
 
@@ -61,7 +65,7 @@ function Index() {
 
         client.current.publish({
             destination: "/pub/chat/message",
-            headers: { token: data.token },
+            headers: {token: data.token},
             body: JSON.stringify({
                 type: 'TALK',
                 roomId: data.roomId,
@@ -73,25 +77,19 @@ function Index() {
     }
 
     return (
-        <div>
-            {chatMessages && chatMessages.length > 0 && (
-                <ul>
-                    {chatMessages.map((_chatMessage, index) => (
-                        <li key={index}>{_chatMessage.message}</li>
-                    ))}
-                </ul>
-            )}
-            <div>
-                <input
-                    type={"text"}
-                    placeholder={"message"}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && publish(message)}
-                />
-                <button onClick={() => publish(message)}>send</button>
-            </div>
-        </div>
+        <Box sx={{m: 5,}}>
+            <ChatRectangle messages={chatMessages}/>
+            <TextField
+                required
+                fullWidth
+                id="outlined-required"
+                label="Message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && publish(message)}
+                sx={{mt:2}}
+            />
+        </Box>
     )
 }
 
