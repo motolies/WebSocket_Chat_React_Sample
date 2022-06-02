@@ -21,7 +21,7 @@ function ChatRectangle({messages}) {
                     display: flex;
                     flex-direction: column;
                     border: 1px black solid;
-                    height: 70vh;
+                    height: 60vh;
                     overflow-y: scroll;
                     margin-top: 1rem;
                   }

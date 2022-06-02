@@ -1,13 +1,13 @@
 import * as StompJs from "@stomp/stompjs"
 import {useEffect, useRef, useState} from "react"
-import {Box, TextField} from "@mui/material"
+import {Box, Button, Grid, TextField} from "@mui/material"
 import ChatRectangle from "../component/ChatRectangle"
 
-const data = {
-    roomId: '11ECBEF60500E127AA7E02915ECBC9E4',
-    token: 'eyJhbGciOiJIUzUxMiJ9.eyJldmVudElkIjoiNTM4NTZERkJDOTlCNEU0QTgxQkIxNEE5NURDMEE2MEEiLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidXNlck5hbWUiOiJraW1uYW13b24iLCJzdWIiOiJBZXhUV3pXOEZnZXZ2ck9zakh6cmRBPT0iLCJpYXQiOjE2NDA4Mzc2NzQsImV4cCI6MTY3MjM3MzY3NH0.DWR43X3JMdGIp-wtzulqUBJSIn3ln4bnlBBKfH3XATYK19SNjK9faHDKU3ShFpxJuDJM4FHhktHbBxwnW8MQFA',
-    host: ''
-}
+// const data = {
+//     roomId: '11ECBEF60500E127AA7E02915ECBC9E4',
+//     token: 'eyJhbGciOiJIUzUxMiJ9.eyJldmVudElkIjoiNTM4NTZERkJDOTlCNEU0QTgxQkIxNEE5NURDMEE2MEEiLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidXNlck5hbWUiOiJraW1uYW13b24iLCJzdWIiOiJBZXhUV3pXOEZnZXZ2ck9zakh6cmRBPT0iLCJpYXQiOjE2NDA4Mzc2NzQsImV4cCI6MTY3MjM3MzY3NH0.DWR43X3JMdGIp-wtzulqUBJSIn3ln4bnlBBKfH3XATYK19SNjK9faHDKU3ShFpxJuDJM4FHhktHbBxwnW8MQFA',
+//     host: ''
+// }
 
 function Index() {
     const messagesEnd = useRef(null)
@@ -15,6 +15,8 @@ function Index() {
     const client = useRef({})
     const [chatMessages, setChatMessages] = useState([])
     const [message, setMessage] = useState("")
+    const [token, setToken] = useState("eyJhbGciOiJIUzUxMiJ9.eyJldmVudElkIjoiNTM4NTZERkJDOTlCNEU0QTgxQkIxNEE5NURDMEE2MEEiLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidXNlck5hbWUiOiJraW1uYW13b24iLCJzdWIiOiJBZXhUV3pXOEZnZXZ2ck9zakh6cmRBPT0iLCJpYXQiOjE2NDA4Mzc2NzQsImV4cCI6MTY3MjM3MzY3NH0.DWR43X3JMdGIp-wtzulqUBJSIn3ln4bnlBBKfH3XATYK19SNjK9faHDKU3ShFpxJuDJM4FHhktHbBxwnW8MQFA")
+    const [roomId, setRoomId] = useState("11ECBEF60500E127AA7E02915ECBC9E4")
 
     useEffect(() => {
         connect()
@@ -27,7 +29,7 @@ function Index() {
         client.current = new StompJs.Client({
             brokerURL: "ws://localhost:8080/ws-stomp/websocket",
             connectHeaders: {
-                "token": data.token,
+                "token": token,
             },
             debug: function (str) {
                 console.log(str)
@@ -50,8 +52,13 @@ function Index() {
         client.current.deactivate()
     }
 
+    const reConnect = () => {
+        disconnect()
+        connect()
+    }
+
     const subscribe = () => {
-        client.current.subscribe(`/sub/chat/room/${data.roomId}`, ({body}) => {
+        client.current.subscribe(`/sub/chat/room/${roomId}`, ({body}) => {
             console.log('recieve message', body)
             setChatMessages((_chatMessages) => [..._chatMessages, JSON.parse(body)])
 
@@ -65,10 +72,10 @@ function Index() {
 
         client.current.publish({
             destination: "/pub/chat/message",
-            headers: {token: data.token},
+            headers: {token: token},
             body: JSON.stringify({
                 type: 'TALK',
-                roomId: data.roomId,
+                roomId: roomId,
                 message: message
             })
         })
@@ -78,6 +85,36 @@ function Index() {
 
     return (
         <Box sx={{m: 5,}}>
+            <Grid container>
+                <Grid item xs={4}>
+                    <TextField
+                        required
+                        fullWidth
+                        id="outlined-required"
+                        label="token"
+                        value={token}
+                        onChange={(e) => setToken(e.target.value)}
+                        sx={{mt: 2}}
+                        size={'small'}
+                    />
+                </Grid>
+                <Grid item xs={4}>
+                    <TextField
+                        required
+                        fullWidth
+                        id="outlined-required"
+                        label="roomId"
+                        value={roomId}
+                        onChange={(e) => setRoomId(e.target.value)}
+                        sx={{mt: 2}}
+                        size={'small'}
+                    />
+                </Grid>
+                <Grid item xs={4} sx={{alignItems:'center', display:'flex'}}>
+                    <Button variant="contained" sx={{mt:2}} fullWidth onClick={reConnect}>Connect</Button>
+                </Grid>
+            </Grid>
+
             <ChatRectangle messages={chatMessages}/>
             <TextField
                 required
@@ -87,7 +124,7 @@ function Index() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && publish(message)}
-                sx={{mt:2}}
+                sx={{mt: 2}}
             />
         </Box>
     )
